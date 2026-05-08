@@ -1,205 +1,205 @@
-/* ════════════════════════════════════════════════
-   INSI TINTAS LDA — script.js
-════════════════════════════════════════════════ */
+/* =====================================================
+   INSI TINTAS — script.js
+   Navigation · Filters · WhatsApp form · Reveal effects
+   ===================================================== */
 
-'use strict';
+(() => {
+  'use strict';
 
-/* ──────────────────────────────────────
-   NAV: scroll shadow + hamburger menu
-────────────────────────────────────── */
-const navbar     = document.getElementById('navbar');
-const hamburger  = document.getElementById('hamburger');
-const mobileMenu = document.getElementById('mobileMenu');
+  document.documentElement.classList.add('js');
 
-window.addEventListener('scroll', () => {
-  navbar.classList.toggle('scrolled', window.scrollY > 40);
-  backTop.classList.toggle('visible', window.scrollY > 400);
-}, { passive: true });
+  const WHATSAPP_NUMBER = '244926199669';
+  const HEADER_SCROLL_THRESHOLD = 12;
 
-hamburger.addEventListener('click', () => {
-  const open = hamburger.classList.toggle('open');
-  mobileMenu.classList.toggle('open', open);
-  document.body.style.overflow = open ? 'hidden' : '';
-});
+  const $ = (selector, scope = document) => scope.querySelector(selector);
+  const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
-// close on link click
-mobileMenu.querySelectorAll('a').forEach(link => {
-  link.addEventListener('click', () => {
-    hamburger.classList.remove('open');
-    mobileMenu.classList.remove('open');
-    document.body.style.overflow = '';
-  });
-});
+  const header = $('#site-header');
+  const nav = $('#main-nav');
+  const hamburger = $('#hamburger');
+  const backToTop = $('#back-to-top');
+  const quoteForm = $('#quote-form');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// close on outside click
-document.addEventListener('click', e => {
-  if (mobileMenu.classList.contains('open') &&
-      !mobileMenu.contains(e.target) &&
-      !hamburger.contains(e.target)) {
-    hamburger.classList.remove('open');
-    mobileMenu.classList.remove('open');
-    document.body.style.overflow = '';
+  function setHeaderState() {
+    if (!header) return;
+    header.classList.toggle('scrolled', window.scrollY > HEADER_SCROLL_THRESHOLD);
+    if (backToTop) backToTop.hidden = window.scrollY < 550;
   }
-});
 
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 960) {
-    hamburger.classList.remove('open');
-    mobileMenu.classList.remove('open');
-    document.body.style.overflow = '';
+  function closeMenu() {
+    if (!nav || !hamburger) return;
+    nav.classList.remove('is-open');
+    hamburger.classList.remove('is-active');
+    hamburger.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('nav-open');
   }
-});
 
-/* ──────────────────────────────────────
-   BACK TO TOP
-────────────────────────────────────── */
-const backTop = document.getElementById('backTop');
-backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  function openMenu() {
+    if (!nav || !hamburger) return;
+    nav.classList.add('is-open');
+    hamburger.classList.add('is-active');
+    hamburger.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('nav-open');
+  }
 
-/* ──────────────────────────────────────
-   PRODUCT FILTER TABS
-────────────────────────────────────── */
-const filterTabs  = document.querySelectorAll('.filter-tab');
-const productCards = document.querySelectorAll('.produto-card');
+  function toggleMenu() {
+    if (!nav) return;
+    nav.classList.contains('is-open') ? closeMenu() : openMenu();
+  }
 
-filterTabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    // update active tab
-    filterTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
+  hamburger?.addEventListener('click', toggleMenu);
 
-    const cat = tab.dataset.filter;
-
-    productCards.forEach(card => {
-      if (cat === 'all' || card.dataset.cat === cat) {
-        card.classList.remove('hidden');
-        // micro-animation on reveal
-        card.style.animation = 'none';
-        card.offsetHeight; // reflow
-        card.style.animation = '';
-      } else {
-        card.classList.add('hidden');
-      }
+  $$('.nav-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      closeMenu();
+      $$('.nav-link').forEach((item) => item.removeAttribute('aria-current'));
+      link.setAttribute('aria-current', 'page');
     });
   });
-});
 
-/* ──────────────────────────────────────
-   SCROLL ANIMATIONS (IntersectionObserver)
-────────────────────────────────────── */
-const fadeEls = document.querySelectorAll('.fade-in');
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-      observer.unobserve(entry.target);
-    }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMenu();
   });
-}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
-fadeEls.forEach(el => observer.observe(el));
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 1100) closeMenu();
+  });
 
-/* ──────────────────────────────────────
-   ACTIVE NAV LINK (scroll spy)
-────────────────────────────────────── */
-const sections = document.querySelectorAll('section[id]');
-const navLinks  = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', setHeaderState, { passive: true });
+  setHeaderState();
 
-const spyObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const id = entry.target.id;
-      navLinks.forEach(a => {
-        a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+  // Product filters
+  const productGrid = $('#product-grid');
+  const filterButtons = $$('.filter-btn');
+
+  function ensureEmptyState() {
+    if (!productGrid) return null;
+    let emptyState = $('.product-empty-state', productGrid);
+    if (!emptyState) {
+      emptyState = document.createElement('p');
+      emptyState.className = 'product-empty-state';
+      emptyState.hidden = true;
+      emptyState.textContent = 'Nenhum produto encontrado nesta categoria.';
+      productGrid.appendChild(emptyState);
+    }
+    return emptyState;
+  }
+
+  function applyProductFilter(filterValue) {
+    if (!productGrid) return;
+
+    const cards = $$('.product-card', productGrid);
+    let visibleCount = 0;
+
+    cards.forEach((card) => {
+      const match = filterValue === 'all' || card.dataset.category === filterValue;
+      card.classList.toggle('hidden', !match);
+      card.setAttribute('aria-hidden', String(!match));
+      if (match) visibleCount += 1;
+    });
+
+    const emptyState = ensureEmptyState();
+    if (emptyState) emptyState.hidden = visibleCount > 0;
+  }
+
+  filterButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const filter = button.dataset.filter || 'all';
+      filterButtons.forEach((btn) => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
       });
-    }
+      button.classList.add('active');
+      button.setAttribute('aria-selected', 'true');
+      applyProductFilter(filter);
+    });
   });
-}, { threshold: 0.35 });
 
-sections.forEach(s => spyObserver.observe(s));
+  applyProductFilter($('.filter-btn.active')?.dataset.filter || 'all');
 
-/* ──────────────────────────────────────
-   IMAGE PLACEHOLDER FALLBACK
-────────────────────────────────────── */
-document.querySelectorAll('img[data-src-fallback]').forEach(img => {
-  img.addEventListener('error', function () {
-    const fallback = this.dataset.srcFallback;
-    if (fallback) this.src = fallback;
-  });
-});
+  // Quote form to WhatsApp
+  function getValue(id) {
+    return ($(id)?.value || '').trim();
+  }
 
-/* ──────────────────────────────────────
-   WHATSAPP FORM
-────────────────────────────────────── */
-const WA_NUMBER = '244926199669';
+  function removeFormMessage() {
+    $('.form-message', quoteForm)?.remove();
+  }
 
-const orcForm = document.getElementById('orcamentoForm');
-if (orcForm) {
-  orcForm.addEventListener('submit', function (e) {
-    e.preventDefault();
+  function showFormMessage(message, type = 'error') {
+    if (!quoteForm) return;
+    removeFormMessage();
+    const element = document.createElement('p');
+    element.className = `form-message form-message--${type}`;
+    element.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    element.textContent = message;
+    quoteForm.prepend(element);
+  }
 
-    const nome      = this.querySelector('[name="nome"]').value.trim();
-    const telefone  = this.querySelector('[name="telefone"]').value.trim();
-    const local     = this.querySelector('[name="local"]').value.trim();
-    const produto   = this.querySelector('[name="produto"]').value;
-    const projeto   = this.querySelector('[name="projeto"]').value;
-    const mensagem  = this.querySelector('[name="mensagem"]').value.trim();
+  quoteForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    removeFormMessage();
 
-    if (!nome || !telefone) {
-      alert('Por favor, preencha pelo menos o nome e o telefone.');
+    if (!quoteForm.checkValidity()) {
+      quoteForm.reportValidity();
+      showFormMessage('Preencha os campos obrigatórios antes de enviar.');
       return;
     }
 
-    const msg = [
-      '🎨 *Olá INSI Tintas! Quero pedir um orçamento.*',
+    const data = {
+      nome: getValue('#f-nome'),
+      telefone: getValue('#f-telefone'),
+      localizacao: getValue('#f-localizacao') || 'Não informado',
+      produto: getValue('#f-produto'),
+      projeto: getValue('#f-projeto'),
+      mensagem: getValue('#f-mensagem') || 'Sem mensagem adicional',
+    };
+
+    const message = [
+      'Olá INSI Tintas! Quero pedir um orçamento.',
       '',
-      `*Nome:* ${nome}`,
-      `*Telefone:* ${telefone}`,
-      `*Localização:* ${local || 'Não indicado'}`,
-      `*Produto:* ${produto || 'Não indicado'}`,
-      `*Tipo de projeto:* ${projeto || 'Não indicado'}`,
-      mensagem ? `*Mensagem:* ${mensagem}` : '',
-    ].filter(Boolean).join('\n');
+      `Nome: ${data.nome}`,
+      `Telefone: ${data.telefone}`,
+      `Localização: ${data.localizacao}`,
+      `Produto: ${data.produto}`,
+      `Tipo de projeto: ${data.projeto}`,
+      `Mensagem: ${data.mensagem}`,
+    ].join('\n');
 
-    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    showFormMessage('A abrir o WhatsApp com o seu pedido...', 'success');
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   });
-}
 
-/* ──────────────────────────────────────
-   INDIVIDUAL PRODUCT "PEDIR" BUTTONS
-────────────────────────────────────── */
-document.querySelectorAll('.btn-pedir').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const produto = btn.dataset.produto || 'Produto INSI';
-    const msg = `Olá INSI Tintas! Tenho interesse no seguinte produto: *${produto}*. Podem fornecer mais informações e orçamento?`;
-    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+  // Branch map buttons: open a Google Maps search without hardcoding exact GPS.
+  $$('.btn-branch-map').forEach((button) => {
+    button.addEventListener('click', () => {
+      const card = button.closest('.branch-card');
+      const city = $('.branch-city', card)?.textContent.trim() || 'Angola';
+      const address = $('.branch-address', card)?.textContent.replace(/\s+/g, ' ').trim() || '';
+      const query = `INSI Tintas ${city} ${address}`.trim();
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
+    });
   });
-});
 
-/* ──────────────────────────────────────
-   GENERIC WA CTA BUTTONS
-────────────────────────────────────── */
-document.querySelectorAll('[data-wa-msg]').forEach(el => {
-  el.addEventListener('click', () => {
-    const msg = el.dataset.waMsg || 'Olá INSI Tintas! Gostaria de mais informações.';
-    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+  // Back to top
+  backToTop?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
   });
-});
 
-/* ──────────────────────────────────────
-   SMOOTH SCROLL for anchor links
-────────────────────────────────────── */
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-    const target = document.querySelector(this.getAttribute('href'));
-    if (!target) return;
-    e.preventDefault();
-    const offset = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-height')) || 72;
-    const top = target.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top, behavior: 'smooth' });
-  });
-});
+  // Reveal on scroll
+  const revealItems = $$('.reveal');
+  if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+  } else {
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        obs.unobserve(entry.target);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+    revealItems.forEach((item) => observer.observe(item));
+  }
+})();

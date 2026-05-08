@@ -404,13 +404,7 @@ address { font-style: normal; }
 /* =====================================================
    7. SCROLL ANIMATIONS
    ===================================================== */
-/* Content is visible by default. When JS is available, animations are enabled. */
 .reveal {
-  opacity: 1;
-  transform: none;
-}
-
-.js .reveal {
   opacity: 0;
   transform: translateY(30px);
   transition:
@@ -418,13 +412,13 @@ address { font-style: normal; }
     transform var(--dur-slow) var(--ease);
 }
 
-.js .reveal.is-visible {
+.reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.js .reveal--delay { transition-delay: 180ms; }
-.js .reveal--delay-2 { transition-delay: 320ms; }
+.reveal--delay { transition-delay: 180ms; }
+.reveal--delay-2 { transition-delay: 320ms; }
 
 /* =====================================================
    8. HEADER
@@ -2136,97 +2130,4 @@ address { font-style: normal; }
   .branch-actions { display: none; }
   body { font-size: 12pt; }
   .hero { min-height: auto; }
-}
-
-/* =====================================================
-   30. PRODUCTION HOTFIXES — RESPONSIVE / JS SAFE
-   ===================================================== */
-body.nav-open {
-  overflow: hidden;
-}
-
-.hero-actions {
-  flex-wrap: wrap;
-}
-
-.product-filters {
-  padding-bottom: .25rem;
-}
-
-.filter-btn:focus-visible,
-.btn:focus-visible,
-.hamburger:focus-visible,
-.back-to-top:focus-visible,
-.btn-branch-map:focus-visible {
-  outline: 3px solid var(--red);
-  outline-offset: 3px;
-}
-
-.form-message {
-  padding: .75rem 1rem;
-  border-radius: var(--radius-md);
-  font-weight: var(--fw-semi);
-  font-size: var(--fs-sm);
-}
-
-.form-message--error {
-  background: #FEE2E2;
-  color: #991B1B;
-  border: 1px solid #FECACA;
-}
-
-.form-message--success {
-  background: #DCFCE7;
-  color: #166534;
-  border: 1px solid #BBF7D0;
-}
-
-.product-empty-state {
-  grid-column: 1 / -1;
-  padding: var(--sp-8);
-  border: 1.5px dashed var(--gray-mid);
-  border-radius: var(--radius-xl);
-  text-align: center;
-  color: var(--gray-text);
-  background: var(--gray-light);
-}
-
-/* Keep tablet header safe. The full menu is too wide below desktop size. */
-@media (min-width: 768px) and (max-width: 1099.98px) {
-  .hamburger { display: flex; }
-  .header-whatsapp { display: none; }
-  .main-nav:not(.is-open) { display: none; }
-}
-
-@media (min-width: 1100px) {
-  .hamburger { display: none; }
-  .main-nav { display: flex; }
-  .header-whatsapp { display: inline-flex; }
-}
-
-@media (max-width: 767.98px) {
-  .hero-actions .btn,
-  .cta-actions .btn {
-    width: 100%;
-  }
-
-  .product-filters {
-    justify-content: flex-start;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .filter-btn {
-    flex: 0 0 auto;
-  }
-
-  .whatsapp-float {
-    bottom: 5rem;
-    right: var(--sp-4);
-  }
-
-  .back-to-top {
-    right: var(--sp-4);
-  }
 }
